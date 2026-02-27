@@ -1,63 +1,65 @@
-// SPI 驱动 - STC32G 软件模拟
+// STC32G 硬件 SPI 驱动
+// 基于 STC32G 数据手册 SPI 章节
+
 #include "spi.h"
 #include "STC32G.h"
 
-// 引脚定义 (P2.0-P2.3)
-#define SCK_PIN     0x01  // P2.0
-#define MISO_PIN    0x02  // P2.1
-#define MOSI_PIN    0x04  // P2.2
-#define CS_PIN      0x08  // P2.3
+// SPI 引脚定义 (使用硬件 SPI1)
+// SCK:  P1.5
+// MISO: P1.6  
+// MOSI: P1.7
+// CS:   P2.3 (软件控制)
 
-// 初始化 SPI GPIO
 void SPI1_Init(void) {
-    // 设置为推挽输出
-    P2M0 |= (SCK_PIN | MOSI_PIN | CS_PIN);
-    P2M1 &= ~(SCK_PIN | MOSI_PIN | CS_PIN);
+    // 1. 配置 GPIO 为 SPI 功能
+    P_SW2 |= 0x10;  // 选择 SPI1 引脚位置
     
-    // MISO 设置为输入
-    P2M0 &= ~MISO_PIN;
-    P2M1 &= ~MISO_PIN;
+    // 2. 配置 GPIO 模式
+    // SCK, MOSI - 推挽输出
+    P1M0 |= 0xA0;  // P1.5, P1.6, P1.7
+    P1M1 &= ~0xA0;
     
-    // 初始状态
-    P2 |= SCK_PIN;  // SCK 高
-    P2 |= CS_PIN;   // CS 高
+    // CS - 推挽输出
+    P2M0 |= 0x08;  // P2.3
+    P2M1 &= ~0x08;
+    
+    // 3. 初始状态
+    P2 |= 0x08;  // CS 高
+    
+    // 4. 配置 SPI 控制寄存器
+    // SPCTL = SPEN + MSTR + CPOL + CPHA
+    // SPEN: 使能 SPI
+    // MSTR: 主机模式
+    // CPOL: 时钟极性 (空闲时高)
+    // CPHA: 时钟相位 (第一个边沿采样)
+    SPCTL = 0x54;  // 0101 0100
+    
+    // 5. 设置 SPI 时钟分频
+    // SPSTAT = 0x00
+    // 时钟 = Fosc / 4 = 24MHz / 4 = 6MHz
+    SPCTL |= 0x00;  // 最快时钟
 }
 
 // 读写一个字节
 uint8_t SPI1_ReadWriteByte(uint8_t data) {
-    uint8_t i;
-    uint8_t result = 0;
+    // 写入数据
+    SPDAT = data;
     
-    for (i = 0; i < 8; i++) {
-        // 输出 MOSI
-        if (data & 0x80)
-            P2 |= MOSI_PIN;
-        else
-            P2 &= ~MOSI_PIN;
-        
-        data <<= 1;
-        
-        // SCK 高，读取 MISO
-        P2 &= ~SCK_PIN;
-        __asm__("nop");
-        __asm__("nop");
-        P2 |= SCK_PIN;
-        
-        // 读取 MISO
-        result <<= 1;
-        if (P2 & MISO_PIN)
-            result |= 0x01;
-    }
+    // 等待传输完成
+    while (!(SPSTAT & 0x80));
     
-    return result;
+    // 清除标志
+    SPSTAT = 0xC0;
+    
+    // 返回接收的数据
+    return SPDAT;
 }
 
-// CS 高
+// CS 控制
 void PAN3031_CS_HIGH(void) {
-    P2 |= CS_PIN;
+    P2 |= 0x08;
 }
 
-// CS 低
 void PAN3031_CS_LOW(void) {
-    P2 &= ~CS_PIN;
+    P2 &= ~0x08;
 }
