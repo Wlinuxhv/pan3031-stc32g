@@ -1,0 +1,36 @@
+name: Build STC32G HEX (Windows)
+
+on:
+  push:
+    branches: [main, master]
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download SDCC
+      run: |
+        $ProgressPreference = 'SilentlyContinue'
+        Invoke-WebRequest -Uri "https://github.com/sdcc/sdcc/releases/download/release-4.4.0/sdcc-4.4.0-x64-setup.exe" -OutFile "$env:TEMP\sdcc-setup.exe"
+        Start-Process -FilePath "$env:TEMP\sdcc-setup.exe" -ArgumentList "/S", "/D=C:\Program Files\SDCC" -Wait
+        Write-Host "SDCC installed"
+
+    - name: Create Build Directory
+      run: New-Item -ItemType Directory -Force -Path build
+
+    - name: Build Project
+      run: |
+        $env:Path = "C:\Program Files\SDCC\bin;$env:Path"
+        & make all
+      shell: pwsh
+
+    - name: Upload HEX Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: pan3031_stc32g_hex
+        path: build/*.hex
+        retention-days: 30

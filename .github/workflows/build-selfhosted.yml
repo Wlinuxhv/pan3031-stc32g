@@ -1,0 +1,37 @@
+name: Build HEX (Self-Hosted)
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: self-hosted
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Verify SDCC
+      run: |
+        if exist "C:\Program Files\SDCC\bin\sdcc.exe" (
+          echo SDCC found
+          "C:\Program Files\SDCC\bin\sdcc.exe" -v
+        ) else (
+          echo ::error::SDCC not found
+          exit /b 1
+        )
+      shell: cmd
+
+    - name: Build HEX
+      run: |
+        call build.bat
+      shell: cmd
+
+    - name: Upload HEX
+      uses: actions/upload-artifact@v4
+      with:
+        name: pan3031_stc32g_hex
+        path: build\*.hex
+        retention-days: 30
