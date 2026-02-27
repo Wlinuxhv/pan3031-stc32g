@@ -1,4 +1,4 @@
-name: Build STC32G HEX (Self-Hosted)
+name: Build STC32G (Self-Hosted)
 
 on:
   push:
@@ -7,29 +7,37 @@ on:
 jobs:
   build:
     runs-on: self-hosted
-    if: contains(github.runner.labels, 'windows')
     
     steps:
-    - name: Checkout code
+    - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Verify SDCC
+    - name: Check for SDCC or Keil
       run: |
-        sdcc -v
+        $sdcc = Get-Command sdcc -ErrorAction SilentlyContinue
+        $keil = Test-Path "C:\Keil_v5"
+        if (-not $sdcc -and -not $keil) {
+          Write-Host "::error::Neither SDCC nor Keil found. Please install one of them."
+          exit 1
+        }
+        if ($sdcc) {
+          Write-Host "Using SDCC: $($sdcc.Version)"
+          echo "BUILD_TOOL=sdcc" >> $env:GITHUB_ENV
+        } else {
+          Write-Host "Using Keil v5"
+          echo "BUILD_TOOL=keil" >> $env:GITHUB_ENV
+        }
       shell: pwsh
 
     - name: Create Build Directory
-      run: |
-        New-Item -ItemType Directory -Force -Path build
+      run: New-Item -ItemType Directory -Force -Path build
       shell: pwsh
 
-    - name: Build Project
+    - name: Build with SDCC
+      if: env.BUILD_TOOL == 'sdcc'
       run: |
-        make clean
         make all
       shell: pwsh
-      env:
-        SDCC_PATH: "C:\Program Files\SDCC"
 
     - name: Upload HEX
       uses: actions/upload-artifact@v4
@@ -37,11 +45,3 @@ jobs:
         name: pan3031_stc32g_hex
         path: build/*.hex
         retention-days: 30
-
-    - name: Create Release (on tag)
-      if: startsWith(github.ref, 'refs/tags/')
-      uses: softprops/action-gh-release@v1
-      with:
-        files: build/*.hex
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
