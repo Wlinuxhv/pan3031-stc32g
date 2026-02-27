@@ -1,18 +1,13 @@
-# SDCC Makefile for PAN3031 STC32G
+# SDCC Makefile for PAN3031 STC32G (Windows compatible)
 
 # Compiler
 CC = sdcc
-AS = sdas8051
-
-# Target MCU
-MCU = stc89c52rc  # SDCC compatible 8051 variant
 
 # Directories
-SRC_DIR = .
+BUILD_DIR = build
+USER_DIR = User
 HAL_DIR = HAL
 RADIO_DIR = Radio
-USER_DIR = User
-BUILD_DIR = build
 
 # Source files
 C_SOURCES = \
@@ -36,23 +31,25 @@ INCLUDES = \
   -I$(RADIO_DIR)/inc \
   -I$(USER_DIR)
 
-# Compiler flags
-CFLAGS = -mmcs51 --model-large --opt-code-size --no-xinit-opt
+# Compiler flags for STC89C52RC (8051 compatible)
+CFLAGS = -mmcs51 --model-large --opt-code-size
 CFLAGS += -DSTC32G12K128
 CFLAGS += --out-fmt-ihx
+CFLAGS += --std-sdcc99
 
 # Output
 TARGET = $(BUILD_DIR)/pan3031_stc32g
 HEX_FILE = $(TARGET).hex
 
 # Create build directory
-$(shell mkdir -p $(BUILD_DIR))
+$(shell if not exist "$(BUILD_DIR)" mkdir "$(BUILD_DIR)")
 
 # Object files
 OBJECTS = $(patsubst %.c,$(BUILD_DIR)/%.rel,$(C_SOURCES))
 
 # Default target
 all: $(HEX_FILE)
+	@echo Build complete: $(HEX_FILE)
 
 # Link
 $(HEX_FILE): $(OBJECTS)
@@ -64,10 +61,10 @@ $(BUILD_DIR)/%.rel: %.c
 
 # Clean
 clean:
-	rm -rf $(BUILD_DIR)/*.rel $(BUILD_DIR)/*.hex $(BUILD_DIR)/*.lst $(BUILD_DIR)/*.map $(BUILD_DIR)/*.sym $(BUILD_DIR)/*.rst $(BUILD_DIR)/*.lk $(BUILD_DIR)/*.mem $(BUILD_DIR)/*.asm
+	-if exist "$(BUILD_DIR)\*.rel" del /Q "$(BUILD_DIR)\*.rel"
+	-if exist "$(BUILD_DIR)\*.hex" del /Q "$(BUILD_DIR)\*.hex"
+	-if exist "$(BUILD_DIR)\*.lst" del /Q "$(BUILD_DIR)\*.lst"
+	-if exist "$(BUILD_DIR)\*.map" del /Q "$(BUILD_DIR)\*.map"
+	-if exist "$(BUILD_DIR)\*.sym" del /Q "$(BUILD_DIR)\*.sym"
 
-# Flash (requires stcgal)
-flash: $(HEX_FILE)
-	stcgal -P stc89 -p /dev/ttyUSB0 -b 115200 $(HEX_FILE)
-
-.PHONY: all clean flash
+.PHONY: all clean
