@@ -1,5 +1,5 @@
 @echo off
-REM PAN3031 STC32G 一键编译脚本
+REM PAN3031 STC32G 一键编译脚本（不依赖 make）
 REM 使用前请确保已安装 SDCC (C:\Program Files\SDCC)
 
 echo ========================================
@@ -31,8 +31,9 @@ REM 编译
 echo [信息] 开始编译...
 echo.
 
-make clean
-make all
+set SOURCES=User\main.c HAL\spi\spi.c HAL\gpio\gpio.c HAL\delay\delay.c HAL\uart\uart.c Radio\src\pan3031.c Radio\src\pan3031_port.c Radio\src\radio.c Radio\src\crc.c
+
+sdcc -mmcs51 --model-large --std-sdcc99 --out-fmt-ihx -DSTC32G12K128 -I. -IHAL\spi -IHAL\gpio -IHAL\delay -IHAL\uart -IRadio\inc -IUser -o build\pan3031_stc32g.hex %SOURCES%
 
 if %ERRORLEVEL% equ 0 (
     echo.
