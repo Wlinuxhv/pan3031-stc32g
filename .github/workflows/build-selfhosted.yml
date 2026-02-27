@@ -13,29 +13,25 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Setup SDCC
+    - name: Verify SDCC
       run: |
-        $sdccPath = "C:\Program Files\SDCC\bin"
-        if (Test-Path $sdccPath) {
-          $currentPath = [Environment]::GetEnvironmentVariable("PATH", "Machine")
-          [Environment]::SetEnvironmentVariable("PATH", "$sdccPath;$currentPath", "Process")
-          Write-Host "SDCC found: $sdccPath"
-          & "C:\Program Files\SDCC\bin\sdcc.exe" -v
-        } else {
-          Write-Host "::error::SDCC not found at $sdccPath"
-          Write-Host "Please install SDCC from: https://sourceforge.net/projects/sdcc/files/"
-          exit 1
-        }
+        if exist "C:\Program Files\SDCC\bin\sdcc.exe" (
+          echo SDCC found
+          "C:\Program Files\SDCC\bin\sdcc.exe" -v
+        ) else (
+          echo ::error::SDCC not found
+          exit /b 1
+        )
+      shell: cmd
 
     - name: Build HEX
       run: |
-        Write-Host "Starting build..."
-        & .\build.bat
-      shell: powershell
+        call build.bat
+      shell: cmd
 
     - name: Upload HEX
       uses: actions/upload-artifact@v4
       with:
         name: pan3031_stc32g_hex
-        path: build/*.hex
+        path: build\*.hex
         retention-days: 30
