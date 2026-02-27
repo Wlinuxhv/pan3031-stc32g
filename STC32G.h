@@ -1,91 +1,70 @@
 #ifndef __STC32G_H__
 #define __STC32G_H__
 
-#include <reg52.h>
-#include <intrins.h>
+// SDCC compatible STC32G12K128 register definitions
+// No external dependencies required
+
+// Standard 8051 bit definitions
+#define _nop_() __asm__("nop")
 
 #define TRUE    1
 #define FALSE   0
 #define SUCCESS 1
 #define FAIL    0
 
-sfr P0   = 0x80;
-sfr SP   = 0x81;
-sfr DPL  = 0x82;
-sfr DPH  = 0x83;
-sfr PCON = 0x87;
-sfr TCON = 0x88;
-sfr TMOD = 0x89;
-sfr TL0  = 0x8A;
-sfr TL1  = 0x8B;
-sfr TH0  = 0x8C;
-sfr TH1  = 0x8D;
-sfr P1   = 0x90;
-sfr SCON = 0x98;
-sfr SBUF = 0x99;
-sfr P2   = 0xA0;
-sfr IE   = 0xA8;
-sfr P3   = 0xB0;
-sfr IP   = 0xB8;
-sfr PSW  = 0xD0;
-sfr ACC  = 0xE0;
-sfr B    = 0xF0;
+// Standard 8051 SFRs
+__sfr __at(0x80) P0;
+__sfr __at(0x81) SP;
+__sfr __at(0x82) DPL;
+__sfr __at(0x83) DPH;
+__sfr __at(0x87) PCON;
+__sfr __at(0x88) TCON;
+__sfr __at(0x89) TMOD;
+__sfr __at(0x8A) TL0;
+__sfr __at(0x8B) TL1;
+__sfr __at(0x8C) TH0;
+__sfr __at(0x8D) TH1;
+__sfr __at(0x90) P1;
+__sfr __at(0x98) SCON;
+__sfr __at(0x99) SBUF;
+__sfr __at(0xA0) P2;
+__sfr __at(0xA8) IE;
+__sfr __at(0xB0) P3;
+__sfr __at(0xB8) IP;
+__sfr __at(0xD0) PSW;
+__sfr __at(0xE0) ACC;
+__sfr __at(0xF0) B;
 
-sfr P0M0  = 0x94;
-sfr P0M1  = 0x93;
-sfr P1M0  = 0x92;
-sfr P1M1  = 0x91;
-sfr P2M0  = 0x96;
-sfr P2M1  = 0x95;
-sfr P3M0  = 0xB2;
-sfr P3M1  = 0xB1;
+// STC32G specific SFRs
+__sfr __at(0x94) P0M0;  __sfr __at(0x93) P0M1;
+__sfr __at(0x92) P1M0;  __sfr __at(0x91) P1M1;
+__sfr __at(0x96) P2M0;  __sfr __at(0x95) P2M1;
+__sfr __at(0xB2) P3M0;  __sfr __at(0xB1) P3M1;
+__sfr __at(0xE9) P4M0;  __sfr __at(0xEA) P4M1;
+__sfr __at(0xF9) P5M0;  __sfr __at(0xFA) P5M1;
 
-sfr CLK_DIV = 0x8F;
-sfr IRTRIM  = 0x8E;
-sfr IRTC    = 0x98;
-sfr IRCR    = 0x9F;
+__sfr __at(0x8F) CLK_DIV;  __sfr __at(0x8E) IRTRIM;
+__sfr __at(0x98) IRTC;     __sfr __at(0x9F) IRCR;
+__sfr __at(0x8C) AUXR;     __sfr __at(0xA2) AUXR1;
+__sfr __at(0xBA) P_SW2;    __sfr __at(0xAF) IE2;
+__sfr __at(0xB5) IP2;      __sfr __at(0xB6) IP2H;
+__sfr __at(0xA8) P_SW1;
 
-sfr AUXR   = 0x8C;
-sfr AUXR1  = 0xA2;
-sfr P_SW2   = 0xBA;
-sfr IE2     = 0xAF;
-sfr IP2     = 0xB5;
-sfr IP2H    = 0xB6;
-sfr P_SW1   = 0xA8;
+__sfr __at(0x9A) S2CON;  __sfr __at(0x9B) S2BUF;  __sfr __at(0x9C) S2BRT;
+__sfr __at(0xA2) SPI_SSPSTAT;  __sfr __at(0xA3) SPI_SSPCON;
+__sfr __at(0xA4) SPI_SSPD;     __sfr __at(0xA5) SPI_SSPSRK;
 
-sfr S2CON   = 0x9A;
-sfr S2BUF   = 0x9B;
-sfr S2BRT   = 0x9C;
-sfr IE2     = 0xAF;
+__sfr __at(0xC8) T2CON;   __sfr __at(0xC9) T2MOD;
+__sfr __at(0xCA) RCAP2L;  __sfr __at(0xCB) RCAP2H;
+__sfr __at(0xCC) TL2;     __sfr __at(0xCD) TH2;
 
-sfr SPI_SSPSTAT = 0xA2;
-sfr SPI_SSPCON  = 0xA3;
-sfr SPI_SSPD    = 0xA4;
-sfr SPI_SSPSRK  = 0xA5;
+__sfr __at(0xC1) WDT_CONTR;  __sfr __at(0xC7) IAP_CONTR;
+__sfr __at(0xC2) IAP_DATA;   __sfr __at(0xC3) IAP_ADDRH;
+__sfr __at(0xC4) IAP_ADDRL;  __sfr __at(0xC5) IAP_CMD;
+__sfr __at(0xC6) IAP_TRIG;
 
-sfr T2CON  = 0xC8;
-sfr T2MOD  = 0xC9;
-sfr RCAP2L = 0xCA;
-sfr RCAP2H = 0xCB;
-sfr TL2    = 0xCC;
-sfr TH2    = 0xCD;
-
-sfr WDT_CONTR = 0xC1;
-sfr IAP_CONTR = 0xC7;
-sfr IAP_DATA  = 0xC2;
-sfr IAP_ADDRH = 0xC3;
-sfr IAP_ADDRL = 0xC4;
-sfr IAP_CMD   = 0xC5;
-sfr IAP_TRIG  = 0xC6;
-
-sfr P4   = 0xE8;
-sfr P4M0 = 0xE9;
-sfr P4M1 = 0xEA;
-sfr XICON = 0xC0;
-
-sfr P5   = 0xF8;
-sfr P5M0 = 0xF9;
-sfr P5M1 = 0xFA;
+__sfr __at(0xE8) P4;   __sfr __at(0xC0) XICON;
+__sfr __at(0xF8) P5;
 
 sfr PWMA_ETO0 = 0xEC;
 sfr PWMA_ETO1 = 0xED;
@@ -214,7 +193,7 @@ typedef unsigned long uint32_t;
 typedef signed char int8_t;
 typedef signed int int16_t;
 typedef signed long int32_t;
-typedef bit bool;
+typedef __bit bool;
 
 #define FOSC    24000000UL
 #define BAUD    115200
