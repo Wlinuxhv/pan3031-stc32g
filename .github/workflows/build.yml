@@ -21,7 +21,7 @@ jobs:
 
     - name: Build Project
       run: |
-        cd build
+        mkdir -p build
         make all
 
     - name: Upload HEX Artifact
