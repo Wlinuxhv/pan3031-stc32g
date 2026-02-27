@@ -1,0 +1,40 @@
+name: Build STC32G HEX
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install SDCC
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y sdcc
+
+    - name: Build Project
+      run: |
+        cd build
+        make all
+
+    - name: Upload HEX Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: pan3031_stc32g_hex
+        path: build/*.hex
+        retention-days: 30
+
+    - name: Create Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: build/*.hex
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

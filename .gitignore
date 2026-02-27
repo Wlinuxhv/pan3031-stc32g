@@ -1,0 +1,30 @@
+# Build artifacts
+build/
+*.hex
+*.rel
+*.lst
+*.map
+*.sym
+*.rst
+*.lk
+*.mem
+*.asm
+*.cdb
+*.m51
+*.hlr
+*.int
+*.omf
+
+# IDE
+*.uvproj*
+*.uvopt*
+*.uvprojx
+*.uvoptx
+.DS_Store
+
+# Serial devices
+/dev/ttyUSB*
+/dev/ttyS*
+
+# Logs
+*.log
