@@ -1,51 +1,53 @@
 @echo off
-REM PAN3031 STC32G 一键编译脚本（不依赖 make）
-REM 使用前请确保已安装 SDCC (C:\Program Files\SDCC)
+REM PAN3031 STC32G 编译器（SDCC 多文件编译）
 
 echo ========================================
 echo PAN3031 STC32G 编译器
 echo ========================================
 echo.
 
-REM 设置 SDCC 路径
 set SDCC_PATH=C:\Program Files\SDCC\bin
 set PATH=%SDCC_PATH%;%PATH%
 
-REM 检查 SDCC 是否可用
 where sdcc >nul 2>nul
 if %ERRORLEVEL% neq 0 (
     echo [错误] 未找到 SDCC!
-    echo 请安装 SDCC: https://sourceforge.net/projects/sdcc/files/
-    pause
     exit /b 1
 )
 
-echo [信息] SDCC 版本:
 sdcc -v
 echo.
 
-REM 创建输出目录
 if not exist "build" mkdir build
 
-REM 编译
-echo [信息] 开始编译...
+echo [信息] 编译中...
 echo.
 
-set SOURCES=User\main.c HAL\spi\spi.c HAL\gpio\gpio.c HAL\delay\delay.c HAL\uart\uart.c Radio\src\pan3031.c Radio\src\pan3031_port.c Radio\src\radio.c Radio\src\crc.c
+REM 编译每个文件为目标文件
+sdcc -mmcs51 --model-large --std-sdcc99 -DSTC32G12K128 -I. -IHAL\spi -IHAL\gpio -IHAL\delay -IHAL\uart -IRadio\inc -IUser -c User\main.c -o build\main.rel
+sdcc -mmcs51 --model-large --std-sdcc99 -DSTC32G12K128 -I. -IHAL\spi -IHAL\gpio -IHAL\delay -IHAL\uart -IRadio\inc -IUser -c HAL\spi\spi.c -o build\spi.rel
+sdcc -mmcs51 --model-large --std-sdcc99 -DSTC32G12K128 -I. -IHAL\spi -IHAL\gpio -IHAL\delay -IHAL\uart -IRadio\inc -IUser -c HAL\gpio\gpio.c -o build\gpio.rel
+sdcc -mmcs51 --model-large --std-sdcc99 -DSTC32G12K128 -I. -IHAL\spi -IHAL\gpio -IHAL\delay -IHAL\uart -IRadio\inc -IUser -c HAL\delay\delay.c -o build\delay.rel
+sdcc -mmcs51 --model-large --std-sdcc99 -DSTC32G12K128 -I. -IHAL\spi -IHAL\gpio -IHAL\delay -IHAL\uart -IRadio\inc -IUser -c HAL\uart\uart.c -o build\uart.rel
+sdcc -mmcs51 --model-large --std-sdcc99 -DSTC32G12K128 -I. -IHAL\spi -IHAL\gpio -IHAL\delay -IHAL\uart -IRadio\inc -IUser -c Radio\src\pan3031.c -o build\pan3031.rel
+sdcc -mmcs51 --model-large --std-sdcc99 -DSTC32G12K128 -I. -IHAL\spi -IHAL\gpio -IHAL\delay -IHAL\uart -IRadio\inc -IUser -c Radio\src\pan3031_port.c -o build\pan3031_port.rel
+sdcc -mmcs51 --model-large --std-sdcc99 -DSTC32G12K128 -I. -IHAL\spi -IHAL\gpio -IHAL\delay -IHAL\uart -IRadio\inc -IUser -c Radio\src\radio.c -o build\radio.rel
+sdcc -mmcs51 --model-large --std-sdcc99 -DSTC32G12K128 -I. -IHAL\spi -IHAL\gpio -IHAL\delay -IHAL\uart -IRadio\inc -IUser -c Radio\src\crc.c -o build\crc.rel
 
-sdcc -mmcs51 --model-large --std-sdcc99 --out-fmt-ihx -DSTC32G12K128 -I. -IHAL\spi -IHAL\gpio -IHAL\delay -IHAL\uart -IRadio\inc -IUser -o build\pan3031_stc32g.hex %SOURCES%
+REM 链接
+sdcc -mmcs51 --model-large --out-fmt-ihx build\main.rel build\spi.rel build\gpio.rel build\delay.rel build\uart.rel build\pan3031.rel build\pan3031_port.rel build\radio.rel build\crc.rel -o build\pan3031_stc32g.hex
 
 if %ERRORLEVEL% equ 0 (
     echo.
     echo ========================================
-    echo [成功] 编译完成!
-    echo HEX 文件位置：build\pan3031_stc32g.hex
+    echo [成功] HEX 生成完成!
+    echo 文件：build\pan3031_stc32g.hex
     echo ========================================
     dir build\*.hex
 ) else (
     echo.
     echo ========================================
-    echo [错误] 编译失败!
+    echo [错误] 编译失败
     echo ========================================
 )
 
