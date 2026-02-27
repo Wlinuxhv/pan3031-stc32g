@@ -5,7 +5,7 @@
 
 void UART1_Init(uint32_t baudrate);
 void UART1_SendByte(uint8_t dat);
-void UART1_SendString(uint8_t *str);
+void UART1_SendString(const char *str);
 void UART1_SendBuf(uint8_t *buf, uint16_t len);
 
 #endif

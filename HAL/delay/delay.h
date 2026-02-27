@@ -4,7 +4,7 @@
 #include "STC32G.h"
 
 void Delay_Init(void);
-void Delay_Ms(uint16_t ms);
-void Delay_Us(uint16_t us);
+void Delay_Ms(uint32_t ms);
+void Delay_Us(uint32_t us);
 
 #endif

@@ -29,10 +29,9 @@
 #define PAN3031_RX_EN_HIGH() do{PAN3031_RX_EN_PORT |= PAN3031_RX_EN_PIN;}while(0)
 #define PAN3031_RX_EN_LOW()  do{PAN3031_RX_EN_PORT &= ~PAN3031_RX_EN_PIN;}while(0)
 
-#define LED1_HIGH()        do{LED1_PORT |= LED1_PIN;}while(0)
-#define LED1_LOW()         do{LED1_PORT &= ~LED1_PIN;}while(0)
-#define LED1_TOGGLE()      do{LED1_PORT ^= LED1_PIN;}while(0)
-
+void LED1_HIGH(void);
+void LED1_LOW(void);
+void LED1_TOGGLE(void);
 void GPIO_Init(void);
 
 #endif

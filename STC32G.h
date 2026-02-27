@@ -4,12 +4,7 @@
 // STC32G12K128 寄存器定义
 // 基于官方数据手册
 
-// 基本类型 (如果 SDCC 未定义)
-#ifndef __SDCC_STDINT_H
-typedef unsigned char uint8_t;
-typedef unsigned int uint16_t;
-typedef unsigned long uint32_t;
-#endif
+// 基本类型 (使用 SDCC 内置的)
 typedef __bit bool;
 
 // 标准 SFR
