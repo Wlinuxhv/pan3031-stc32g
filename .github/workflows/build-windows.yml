@@ -3,8 +3,6 @@ name: Build STC32G HEX (Windows)
 on:
   push:
     branches: [main, master]
-  pull_request:
-    branches: [main, master]
 
 jobs:
   build-windows:
@@ -14,20 +12,19 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Install SDCC
+    - name: Download SDCC
       run: |
-        choco install sdcc -y
+        $ProgressPreference = 'SilentlyContinue'
+        Invoke-WebRequest -Uri "https://github.com/sdcc/sdcc/releases/download/release-4.4.0/sdcc-4.4.0-x64-setup.exe" -OutFile "$env:TEMP\sdcc-setup.exe"
+        Start-Process -FilePath "$env:TEMP\sdcc-setup.exe" -ArgumentList "/S", "/D=C:\Program Files\SDCC" -Wait
         Write-Host "SDCC installed"
-        $env:Path = "C:\Program Files\SDCC;$env:Path"
-        sdcc -v
 
     - name: Create Build Directory
-      run: |
-        New-Item -ItemType Directory -Force -Path build
+      run: New-Item -ItemType Directory -Force -Path build
 
     - name: Build Project
       run: |
-        $env:Path = "C:\Program Files\SDCC;$env:Path"
+        $env:Path = "C:\Program Files\SDCC\bin;$env:Path"
         & make all
       shell: pwsh
 
@@ -37,11 +34,3 @@ jobs:
         name: pan3031_stc32g_hex
         path: build/*.hex
         retention-days: 30
-
-    - name: Create Release
-      if: startsWith(github.ref, 'refs/tags/')
-      uses: softprops/action-gh-release@v1
-      with:
-        files: build/*.hex
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
