@@ -1,8 +1,9 @@
-name: Build STC32G (Self-Hosted)
+name: Build HEX (Self-Hosted)
 
 on:
   push:
     branches: [main, master]
+  workflow_dispatch:  # 允许手动触发
 
 jobs:
   build:
@@ -12,32 +13,23 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Check for SDCC or Keil
+    - name: Setup SDCC
       run: |
-        $sdcc = Get-Command sdcc -ErrorAction SilentlyContinue
-        $keil = Test-Path "C:\Keil_v5"
-        if (-not $sdcc -and -not $keil) {
-          Write-Host "::error::Neither SDCC nor Keil found. Please install one of them."
+        $sdccPath = "C:\Program Files\SDCC\bin"
+        if (Test-Path $sdccPath) {
+          echo "$sdccPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          sdcc -v
+        } else {
+          Write-Host "::error::SDCC not found at $sdccPath"
+          Write-Host "Please install SDCC from: https://sourceforge.net/projects/sdcc/files/"
           exit 1
         }
-        if ($sdcc) {
-          Write-Host "Using SDCC: $($sdcc.Version)"
-          echo "BUILD_TOOL=sdcc" >> $env:GITHUB_ENV
-        } else {
-          Write-Host "Using Keil v5"
-          echo "BUILD_TOOL=keil" >> $env:GITHUB_ENV
-        }
       shell: pwsh
 
-    - name: Create Build Directory
-      run: New-Item -ItemType Directory -Force -Path build
-      shell: pwsh
-
-    - name: Build with SDCC
-      if: env.BUILD_TOOL == 'sdcc'
+    - name: Build HEX
       run: |
-        make all
-      shell: pwsh
+        .\build.bat
+      shell: cmd
 
     - name: Upload HEX
       uses: actions/upload-artifact@v4
