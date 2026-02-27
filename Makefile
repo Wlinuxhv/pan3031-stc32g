@@ -1,58 +1,55 @@
 # SDCC Makefile for PAN3031 STC32G
-# Compatible with both Windows and Linux
+# 分步编译每个文件
 
 CC = sdcc
 
 # Directories
 BUILD_DIR = build
-USER_DIR = User
-HAL_DIR = HAL
-RADIO_DIR = Radio
 
-# Source files (Unix line continuation)
+# Source files
 C_SOURCES = \
-  $(USER_DIR)/main.c \
-  $(HAL_DIR)/spi/spi.c \
-  $(HAL_DIR)/gpio/gpio.c \
-  $(HAL_DIR)/delay/delay.c \
-  $(HAL_DIR)/uart/uart.c \
-  $(RADIO_DIR)/src/pan3031.c \
-  $(RADIO_DIR)/src/pan3031_port.c \
-  $(RADIO_DIR)/src/radio.c \
-  $(RADIO_DIR)/src/crc.c
+  User/main.c \
+  HAL/spi/spi.c \
+  HAL/gpio/gpio.c \
+  HAL/delay/delay.c \
+  HAL/uart/uart.c \
+  Radio/src/pan3031.c \
+  Radio/src/radio.c \
+  Radio/src/crc.c
 
 # Include paths
 INCLUDES = \
   -I. \
-  -I$(HAL_DIR)/spi \
-  -I$(HAL_DIR)/gpio \
-  -I$(HAL_DIR)/delay \
-  -I$(HAL_DIR)/uart \
-  -I$(RADIO_DIR)/inc \
-  -I$(USER_DIR)
+  -IHAL/spi \
+  -IHAL/gpio \
+  -IHAL/delay \
+  -IHAL/uart \
+  -IRadio/inc \
+  -IUser
 
 # Compiler flags
 CFLAGS = -mmcs51 --model-large --std-sdcc99 --out-fmt-ihx -DSTC32G12K128
 
+# Object files
+OBJECTS = $(patsubst %.c,$(BUILD_DIR)/%.rel,$(C_SOURCES))
+
 # Output
-TARGET = $(BUILD_DIR)/pan3031_stc32g
-HEX_FILE = $(TARGET).hex
+TARGET = $(BUILD_DIR)/pan3031_stc32g.hex
 
 .PHONY: all clean
 
-# Default target
-all: $(BUILD_DIR) $(HEX_FILE)
-	@echo "Build complete: $(HEX_FILE)"
+all: $(BUILD_DIR) $(TARGET)
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
-# Compile and link
-$(HEX_FILE): $(C_SOURCES) | $(BUILD_DIR)
-	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(C_SOURCES)
+# Compile each source file
+$(BUILD_DIR)/%.rel: %.c | $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
-# Clean
+# Link all object files
+$(TARGET): $(OBJECTS)
+	$(CC) $(CFLAGS) --out-fmt-ihx $(OBJECTS) -o $@
+
 clean:
-	rm -rf $(BUILD_DIR)/*.rel $(BUILD_DIR)/*.hex $(BUILD_DIR)/*.lst
-	rm -rf $(BUILD_DIR)/*.map $(BUILD_DIR)/*.sym $(BUILD_DIR)/*.rst
-	rm -rf $(BUILD_DIR)/*.lk $(BUILD_DIR)/*.mem $(BUILD_DIR)/*.asm
+	rm -rf $(BUILD_DIR)

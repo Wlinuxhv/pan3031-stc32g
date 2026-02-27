@@ -45,9 +45,7 @@
 #define RF_RST_PORT           P3
 #define RF_RST_PIN            0x08  // P3.3
 
-// 结果定义
-#define OK                    0
-#define FAIL                  1
+
 
 // SPI 宏
 #define CS_LOW()              (RF_NSS_PORT &= ~RF_NSS_PIN)
