@@ -1,8 +1,6 @@
 @echo off
-REM PAN3031 STC32G 编译器（SDCC 多文件编译）
-
 echo ========================================
-echo PAN3031 STC32G 编译器
+echo PAN3031 STC32G 编译器 (简化版)
 echo ========================================
 echo.
 
@@ -23,19 +21,37 @@ if not exist "build" mkdir build
 echo [信息] 编译中...
 echo.
 
-REM 编译每个文件为目标文件
-sdcc -mmcs51 --model-large --std-sdcc99 -DSTC32G12K128 -I. -IHAL\spi -IHAL\gpio -IHAL\delay -IHAL\uart -IRadio\inc -IUser -c User\main.c -o build\main.rel
-sdcc -mmcs51 --model-large --std-sdcc99 -DSTC32G12K128 -I. -IHAL\spi -IHAL\gpio -IHAL\delay -IHAL\uart -IRadio\inc -IUser -c HAL\spi\spi.c -o build\spi.rel
-sdcc -mmcs51 --model-large --std-sdcc99 -DSTC32G12K128 -I. -IHAL\spi -IHAL\gpio -IHAL\delay -IHAL\uart -IRadio\inc -IUser -c HAL\gpio\gpio.c -o build\gpio.rel
-sdcc -mmcs51 --model-large --std-sdcc99 -DSTC32G12K128 -I. -IHAL\spi -IHAL\gpio -IHAL\delay -IHAL\uart -IRadio\inc -IUser -c HAL\delay\delay.c -o build\delay.rel
-sdcc -mmcs51 --model-large --std-sdcc99 -DSTC32G12K128 -I. -IHAL\spi -IHAL\gpio -IHAL\delay -IHAL\uart -IRadio\inc -IUser -c HAL\uart\uart.c -o build\uart.rel
-sdcc -mmcs51 --model-large --std-sdcc99 -DSTC32G12K128 -I. -IHAL\spi -IHAL\gpio -IHAL\delay -IHAL\uart -IRadio\inc -IUser -c Radio\src\pan3031.c -o build\pan3031.rel
-sdcc -mmcs51 --model-large --std-sdcc99 -DSTC32G12K128 -I. -IHAL\spi -IHAL\gpio -IHAL\delay -IHAL\uart -IRadio\inc -IUser -c Radio\src\pan3031_port.c -o build\pan3031_port.rel
-sdcc -mmcs51 --model-large --std-sdcc99 -DSTC32G12K128 -I. -IHAL\spi -IHAL\gpio -IHAL\delay -IHAL\uart -IRadio\inc -IUser -c Radio\src\radio.c -o build\radio.rel
-sdcc -mmcs51 --model-large --std-sdcc99 -DSTC32G12K128 -I. -IHAL\spi -IHAL\gpio -IHAL\delay -IHAL\uart -IRadio\inc -IUser -c Radio\src\crc.c -o build\crc.rel
+REM 编译每个文件
+echo Compiling STC32G.h...
+sdcc -mmcs51 --model-large --std-sdcc99 -DSTC32G12K128 -c STC32G.h -o build\stc32g.rel 2>nul
 
-REM 链接
-sdcc -mmcs51 --model-large --out-fmt-ihx build\main.rel build\spi.rel build\gpio.rel build\delay.rel build\uart.rel build\pan3031.rel build\pan3031_port.rel build\radio.rel build\crc.rel -o build\pan3031_stc32g.hex
+echo Compiling main.c...
+sdcc -mmcs51 --model-large --std-sdcc99 -DSTC32G12K128 -I. -IHAL\spi -IHAL\gpio -IHAL\delay -IHAL\uart -IRadio\inc -IUser -c User\main.c -o build\main.rel
+
+echo Compiling spi.c...
+sdcc -mmcs51 --model-large --std-sdcc99 -DSTC32G12K128 -I. -IHAL\spi -IHAL\gpio -c HAL\spi\spi.c -o build\spi.rel
+
+echo Compiling gpio.c...
+sdcc -mmcs51 --model-large --std-sdcc99 -DSTC32G12K128 -I. -IHAL\gpio -c HAL\gpio\gpio.c -o build\gpio.rel
+
+echo Compiling delay.c...
+sdcc -mmcs51 --model-large --std-sdcc99 -DSTC32G12K128 -I. -IHAL\delay -c HAL\delay\delay.c -o build\delay.rel
+
+echo Compiling uart.c...
+sdcc -mmcs51 --model-large --std-sdcc99 -DSTC32G12K128 -I. -IHAL\uart -c HAL\uart\uart.c -o build\uart.rel
+
+echo Compiling pan3031.c...
+sdcc -mmcs51 --model-large --std-sdcc99 -DSTC32G12K128 -I. -IRadio\inc -c Radio\src\pan3031.c -o build\pan3031.rel
+
+echo Compiling radio.c...
+sdcc -mmcs51 --model-large --std-sdcc99 -DSTC32G12K128 -I. -IRadio\inc -c Radio\src\radio.c -o build\radio.rel
+
+echo Compiling crc.c...
+sdcc -mmcs51 --model-large --std-sdcc99 -DSTC32G12K128 -I. -IRadio\inc -c Radio\src\crc.c -o build\crc.rel
+
+echo.
+echo Linking...
+sdcc -mmcs51 --model-large --out-fmt-ihx build\main.rel build\spi.rel build\gpio.rel build\delay.rel build\uart.rel build\pan3031.rel build\radio.rel build\crc.rel -o build\pan3031_stc32g.hex
 
 if %ERRORLEVEL% equ 0 (
     echo.

@@ -1,57 +1,63 @@
+// SPI 驱动 - STC32G 软件模拟
 #include "spi.h"
+#include "STC32G.h"
 
-void SPI1_Init(void)
-{
-    P_SW2 |= 0x01;
+// 引脚定义 (P2.0-P2.3)
+#define SCK_PIN     0x01  // P2.0
+#define MISO_PIN    0x02  // P2.1
+#define MOSI_PIN    0x04  // P2.2
+#define CS_PIN      0x08  // P2.3
+
+// 初始化 SPI GPIO
+void SPI1_Init(void) {
+    // 设置为推挽输出
+    P2M0 |= (SCK_PIN | MOSI_PIN | CS_PIN);
+    P2M1 &= ~(SCK_PIN | MOSI_PIN | CS_PIN);
     
-    SPI_SSPSTAT = 0x40;
-    SPI_SSPCON = 0x30;
+    // MISO 设置为输入
+    P2M0 &= ~MISO_PIN;
+    P2M1 &= ~MISO_PIN;
     
-    P_SW2 &= ~0x01;
+    // 初始状态
+    P2 |= SCK_PIN;  // SCK 高
+    P2 |= CS_PIN;   // CS 高
 }
 
-void SPI2_Init(void)
-{
-    P_SW2 |= 0x01;
-    
-    SPI_SSPSTAT = 0x40;
-    SPI_SSPCON = 0x30;
-    
-    P_SW2 &= ~0x01;
-}
-
-uint8_t SPI1_ReadWriteByte(uint8_t dat)
-{
+// 读写一个字节
+uint8_t SPI1_ReadWriteByte(uint8_t data) {
     uint8_t i;
-    for(i = 0; i < 8; i++)
-    {
-        if(dat & 0x80)
-        {
-            PAN3031_MOSI_HIGH();
-        }
+    uint8_t result = 0;
+    
+    for (i = 0; i < 8; i++) {
+        // 输出 MOSI
+        if (data & 0x80)
+            P2 |= MOSI_PIN;
         else
-        {
-            PAN3031_MOSI_LOW();
-        }
-        dat <<= 1;
+            P2 &= ~MOSI_PIN;
         
-        PAN3031_SCK_HIGH();
-        _nop_();
-        _nop_();
+        data <<= 1;
         
-        if(PAN3031_MISO_READ())
-        {
-            dat |= 0x01;
-        }
+        // SCK 高，读取 MISO
+        P2 &= ~SCK_PIN;
+        __asm__("nop");
+        __asm__("nop");
+        P2 |= SCK_PIN;
         
-        PAN3031_SCK_LOW();
-        _nop_();
-        _nop_();
+        // 读取 MISO
+        result <<= 1;
+        if (P2 & MISO_PIN)
+            result |= 0x01;
     }
-    return dat;
+    
+    return result;
 }
 
-uint8_t SPI2_ReadWriteByte(uint8_t dat)
-{
-    return SPI1_ReadWriteByte(dat);
+// CS 高
+void PAN3031_CS_HIGH(void) {
+    P2 |= CS_PIN;
+}
+
+// CS 低
+void PAN3031_CS_LOW(void) {
+    P2 &= ~CS_PIN;
 }

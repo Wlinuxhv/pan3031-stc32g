@@ -1,29 +1,48 @@
+// GPIO 驱动 - STC32G
 #include "gpio.h"
+#include "STC32G.h"
 
-void GPIO_Init(void)
-{
-    P2M0 &= 0xF0;
-    P2M1 &= 0xF0;
-    P2M0 |= 0x0A;
-    P2M1 |= 0x0A;
+// 初始化 GPIO
+void GPIO_Init(void) {
+    // P2 - SPI (已在 SPI_Init 中配置)
     
-    P3M0 &= 0x07;
-    P3M1 &= 0x07;
-    P3M0 |= 0xE0;
-    P3M1 |= 0x00;
+    // P3 - IRQ, RST, 其他控制
+    // P3.2 IRQ - 输入
+    P3M0 &= ~0x04;
+    P3M1 &= ~0x04;
     
-    P5M0 &= 0xEF;
-    P5M1 &= 0xEF;
+    // P3.3 RST - 输出
+    P3M0 |= 0x08;
+    P3M1 &= ~0x08;
+    
+    // P3.4 TX_EN - 输出
+    P3M0 |= 0x10;
+    P3M1 &= ~0x10;
+    
+    // P3.5 RX_EN - 输出
+    P3M0 |= 0x20;
+    P3M1 &= ~0x20;
+    
+    // P5.4 LED - 输出
     P5M0 |= 0x10;
-    P5M1 |= 0x00;
+    P5M1 &= ~0x10;
     
-    PAN3031_CS_HIGH();
-    PAN3031_SCK_LOW();
-    PAN3031_MOSI_LOW();
-    
-    PAN3031_RST_HIGH();
-    PAN3031_TX_EN_LOW();
-    PAN3031_RX_EN_LOW();
-    
-    LED1_HIGH();
+    // 初始状态
+    P3 |= 0x08;  // RST 高
+    P3 &= ~0x10; // TX_EN 低
+    P3 &= ~0x20; // RX_EN 低
+    P5 |= 0x10;  // LED 灭
+}
+
+// LED 控制
+void LED1_ON(void) {
+    P5 &= ~0x10;
+}
+
+void LED1_OFF(void) {
+    P5 |= 0x10;
+}
+
+void LED1_TOGGLE(void) {
+    P5 ^= 0x10;
 }

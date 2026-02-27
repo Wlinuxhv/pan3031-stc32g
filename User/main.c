@@ -1,115 +1,78 @@
+// PAN3031 STC32G 演示程序
 #include "STC32G.h"
-#include "gpio.h"
 #include "spi.h"
+#include "gpio.h"
 #include "delay.h"
 #include "uart.h"
 #include "pan3031_port.h"
 #include "radio.h"
 
-#define TX_LEN 10
-#define RX_LEN 64
+// 外部变量
+extern rf_port_t rf_port;
 
-bool pan3031_irq_trigged_flag = FALSE;
+// 初始化 rf_port 结构
+rf_port_t rf_port = {
+    .spi_readwrite = SPI1_ReadWriteByte,
+    .cs_high = PAN3031_CS_HIGH,
+    .cs_low = PAN3031_CS_LOW,
+    .delay_ms = Delay_Ms,
+    .delay_us = Delay_Us
+};
 
-uint8_t tx_test_buf[TX_LEN] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-uint8_t rx_test_buf[RX_LEN] = {0};
-uint32_t tx_time = 0;
-
-extern struct RxDoneMsg RxDoneParams;
-
-void System_Init(void)
-{
+// 系统初始化
+void System_Init(void) {
     Delay_Init();
     GPIO_Init();
     SPI1_Init();
     UART1_Init(115200);
-    EX0 = 1;
-    IT0 = 1;
-    EA = 1;
 }
 
-void LED_Toggle(void)
-{
-    LED1_TOGGLE();
-    Delay_Ms(50);
-    LED1_TOGGLE();
-    Delay_Ms(50);
-}
-
-void Master_Send(void)
-{
-    if(rf_single_tx_data(tx_test_buf, TX_LEN, &tx_time) != OK)
-    {
-        LED1_LOW();
-    }
-    while(rf_get_transmit_flag() == RADIO_FLAG_IDLE);
-    rf_set_transmit_flag(RADIO_FLAG_IDLE);
-    LED_Toggle();
-    
-    rf_enter_single_timeout_rx(15000);
-}
-
-void Slave_Receive(void)
-{
-    uint8_t i;
-    if(rf_get_recv_flag() == RADIO_FLAG_RXDONE)
-    {
-        rf_set_recv_flag(RADIO_FLAG_IDLE);
-        
-        for(i = 0; i < RxDoneParams.Size; i++)
-        {
-            rx_test_buf[i] = RxDoneParams.Payload[i];
-        }
-        
-        rf_enter_single_timeout_rx(15000);
-        LED_Toggle();
-    }
-    
-    if((rf_get_recv_flag() == RADIO_FLAG_RXTIMEOUT) || (rf_get_recv_flag() == RADIO_FLAG_RXERR))
-    {
-        rf_set_recv_flag(RADIO_FLAG_IDLE);
-        rf_enter_single_timeout_rx(15000);
-    }
-}
-
-void PAN3031_IRQ_Handler(void) interrupt 0
-{
-    pan3031_irq_trigged_flag = TRUE;
-    rf_irq_handler();
-}
-
-void main(void)
-{
-    uint32_t ret;
+// 主函数
+void main(void) {
+    uint8_t tx_data[] = "Hello PAN3031!";
+    uint8_t rx_data[64];
+    uint8_t rx_len;
     
     System_Init();
     
-    UART1_SendString("PAN3031 STC32G Demo\r\n");
+    // 发送欢迎信息
+    UART1_SendString("\r\n=== PAN3031 STC32G Demo ===\r\n");
     
-    Delay_Ms(10);
-    
-    ret = rf_init();
-    
-    if(ret != OK)
-    {
-        UART1_SendString("RF Init Failed!\r\n");
-        while(1)
-        {
-            LED_Toggle();
-        }
+    // 初始化射频
+    UART1_SendString("RF Init... ");
+    if (rf_init() == OK) {
+        UART1_SendString("OK\r\n");
+    } else {
+        UART1_SendString("FAIL!\r\n");
+        while (1);
     }
     
-    UART1_SendString("RF Init OK!\r\n");
+    // 开始接收
+    UART1_SendString("Start RX...\r\n");
+    rf_start_rx();
     
-    rf_set_default_para();
-    
-    rf_enter_single_timeout_rx(15000);
-    
-    UART1_SendString("Start Receiving...\r\n");
-    
-    while(1)
-    {
-        rf_irq_process();
-        Slave_Receive();
+    // 主循环
+    while (1) {
+        // 轮询接收
+        if (rf_poll_rx(rx_data, &rx_len) == OK) {
+            UART1_SendString("RX: ");
+            for (uint8_t i = 0; i < rx_len; i++) {
+                UART1_SendByte(rx_data[i]);
+            }
+            UART1_SendString("\r\n");
+            
+            // 回复
+            rf_send(tx_data, sizeof(tx_data) - 1);
+            
+            // 等待发送完成
+            while (rf_get_state() == RADIO_STATE_TX) {
+                rf_poll_tx();
+            }
+            
+            // 回到接收
+            rf_start_rx();
+        }
+        
+        Delay_Ms(10);
     }
 }
