@@ -1,0 +1,77 @@
+name: Build STC32G HEX (Fixed)
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build-ubuntu:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install SDCC
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y sdcc
+        
+    - name: Verify SDCC Installation
+      run: |
+        echo "SDCC Version:"
+        sdcc -v
+        echo "SDCC Path:"
+        which sdcc
+
+    - name: Create Build Directory
+      run: mkdir -p build
+
+    - name: Build Project (Linux Makefile)
+      run: |
+        make -f Makefile.linux all
+      env:
+        CC: sdcc
+        CFLAGS: "-mmcs51 --model-large --std-sdcc99 --out-fmt-ihx -DSTC32G12K128"
+
+    - name: Verify Build Output
+      run: |
+        echo "Build output files:"
+        ls -la build/
+        if [ -f build/pan3031_stc32g.hex ]; then
+          echo "✓ HEX file generated successfully"
+          echo "HEX file size: $(wc -c < build/pan3031_stc32g.hex) bytes"
+        else
+          echo "✗ HEX file not found!"
+          exit 1
+        fi
+
+    - name: Upload HEX Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: pan3031_stc32g_hex
+        path: build/*.hex
+        retention-days: 30
+
+    - name: Build Summary
+      if: always()
+      run: |
+        echo "## 📦 Build Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Item | Value |" >> $GITHUB_STEP_SUMMARY
+        echo "|------|-------|" >> $GITHUB_STEP_SUMMARY
+        echo "| SDCC Version | $(sdcc -v 2>&1 | head -1) |" >> $GITHUB_STEP_SUMMARY
+        echo "| Runner | ubuntu-latest |" >> $GITHUB_STEP_SUMMARY
+        echo "| Build Status | ${{ job.status }} |" >> $GITHUB_STEP_SUMMARY
+        if [ -f build/pan3031_stc32g.hex ]; then
+          echo "| HEX Size | $(wc -c < build/pan3031_stc32g.hex) bytes |" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [ "${{ job.status }}" == "success" ]; then
+          echo "✅ **Build succeeded!** Download HEX from artifacts." >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ **Build failed!** Check logs above." >> $GITHUB_STEP_SUMMARY
+        fi

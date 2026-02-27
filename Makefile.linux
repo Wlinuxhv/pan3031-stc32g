@@ -1,0 +1,80 @@
+# SDCC Makefile for PAN3031 STC32G (Linux/Ubuntu - GitHub Actions)
+# This Makefile is optimized for GitHub Actions Ubuntu runners
+
+CC = sdcc
+
+# Directories
+BUILD_DIR = build
+USER_DIR = User
+HAL_DIR = HAL
+RADIO_DIR = Radio
+
+# Source files (Unix-style line continuation)
+C_SOURCES = \
+  $(USER_DIR)/main.c \
+  $(HAL_DIR)/spi/spi.c \
+  $(HAL_DIR)/gpio/gpio.c \
+  $(HAL_DIR)/delay/delay.c \
+  $(HAL_DIR)/uart/uart.c \
+  $(RADIO_DIR)/src/pan3031.c \
+  $(RADIO_DIR)/src/pan3031_port.c \
+  $(RADIO_DIR)/src/radio.c \
+  $(RADIO_DIR)/src/crc.c
+
+# Include paths
+INCLUDES = \
+  -I. \
+  -I$(HAL_DIR)/spi \
+  -I$(HAL_DIR)/gpio \
+  -I$(HAL_DIR)/delay \
+  -I$(HAL_DIR)/uart \
+  -I$(RADIO_DIR)/inc \
+  -I$(USER_DIR)
+
+# Compiler flags for SDCC
+# --mmcs51: Target MCS51 architecture
+# --model-large: Use large memory model
+# --std-sdcc99: Use SDCC99 standard
+# --out-fmt-ihx: Output Intel HEX format
+CFLAGS = -mmcs51 --model-large --std-sdcc99 --out-fmt-ihx -DSTC32G12K128
+
+# Output
+TARGET = $(BUILD_DIR)/pan3031_stc32g
+HEX_FILE = $(TARGET).hex
+
+# Default target
+all: $(BUILD_DIR) $(HEX_FILE)
+	@echo ""
+	@echo "========================================"
+	@echo "Build complete: $(HEX_FILE)"
+	@echo "========================================"
+
+# Create build directory
+$(BUILD_DIR):
+	@mkdir -p $(BUILD_DIR)
+
+# Compile and link
+$(HEX_FILE): $(C_SOURCES) | $(BUILD_DIR)
+	@echo "Compiling with SDCC..."
+	@echo "Source files: $(C_SOURCES)"
+	$(CC) $(CFLAGS) $(INCLUDES) -o $@ $(C_SOURCES)
+	@echo ""
+	@echo "Output files:"
+	@ls -la $(BUILD_DIR)/*.hex 2>/dev/null || echo "No HEX file generated"
+
+# Clean build artifacts
+clean:
+	@echo "Cleaning build directory..."
+	rm -rf $(BUILD_DIR)
+	@echo "Clean complete"
+
+# Verbose build (for debugging)
+verbose:
+	@echo "Compiler: $(CC)"
+	@echo "Flags: $(CFLAGS)"
+	@echo "Sources: $(C_SOURCES)"
+	@echo "Includes: $(INCLUDES)"
+	@$(MAKE) all
+
+# Phony targets
+.PHONY: all clean verbose

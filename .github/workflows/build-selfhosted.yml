@@ -3,7 +3,7 @@ name: Build HEX (Self-Hosted)
 on:
   push:
     branches: [main, master]
-  workflow_dispatch:  # 允许手动触发
+  workflow_dispatch:
 
 jobs:
   build:
@@ -17,19 +17,21 @@ jobs:
       run: |
         $sdccPath = "C:\Program Files\SDCC\bin"
         if (Test-Path $sdccPath) {
-          echo "$sdccPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          sdcc -v
+          $currentPath = [Environment]::GetEnvironmentVariable("PATH", "Machine")
+          [Environment]::SetEnvironmentVariable("PATH", "$sdccPath;$currentPath", "Process")
+          Write-Host "SDCC found: $sdccPath"
+          & "C:\Program Files\SDCC\bin\sdcc.exe" -v
         } else {
           Write-Host "::error::SDCC not found at $sdccPath"
           Write-Host "Please install SDCC from: https://sourceforge.net/projects/sdcc/files/"
           exit 1
         }
-      shell: pwsh
 
     - name: Build HEX
       run: |
-        .\build.bat
-      shell: cmd
+        Write-Host "Starting build..."
+        & .\build.bat
+      shell: powershell
 
     - name: Upload HEX
       uses: actions/upload-artifact@v4
